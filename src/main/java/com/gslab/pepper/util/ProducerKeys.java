@@ -1,6 +1,7 @@
 package com.gslab.pepper.util;
 
 import org.apache.kafka.common.serialization.StringSerializer;
+
 /**
  * The ProducerKeys is property constant class.
  *

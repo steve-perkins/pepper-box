@@ -1,9 +1,7 @@
 package com.gslab.pepper.config.plaintext;
 
-
 import com.gslab.pepper.loadgen.BaseLoadGenerator;
 import com.gslab.pepper.loadgen.impl.PlaintTextLoadGenerator;
-import com.gslab.pepper.util.PropsKeys;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.engine.event.LoopIterationListener;
@@ -12,8 +10,6 @@ import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-
-import javax.swing.*;
 
 /**
  * The PlainTextConfigElement custom jmeter config element. This class acts as plain text feeder to jmeter java sampler, it includes plaintext load generator which takes input schema and generates messages.

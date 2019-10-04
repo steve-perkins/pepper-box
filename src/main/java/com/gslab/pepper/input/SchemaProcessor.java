@@ -1,6 +1,5 @@
 package com.gslab.pepper.input;
 
-
 import com.gslab.pepper.exception.PepperBoxException;
 import com.gslab.pepper.model.FieldExpressionMapping;
 

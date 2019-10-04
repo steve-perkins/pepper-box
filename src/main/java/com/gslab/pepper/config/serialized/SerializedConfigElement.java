@@ -3,7 +3,6 @@ package com.gslab.pepper.config.serialized;
 import com.gslab.pepper.model.FieldExpressionMapping;
 import com.gslab.pepper.loadgen.BaseLoadGenerator;
 import com.gslab.pepper.loadgen.impl.SerializedLoadGenerator;
-import com.gslab.pepper.util.PropsKeys;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.engine.event.LoopIterationListener;

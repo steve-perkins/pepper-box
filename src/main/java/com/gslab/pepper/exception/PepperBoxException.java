@@ -1,8 +1,5 @@
 package com.gslab.pepper.exception;
 
-
-import java.io.IOException;
-
 public class PepperBoxException extends Exception {
 
     public PepperBoxException(String message) {
