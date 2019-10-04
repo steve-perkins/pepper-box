@@ -65,6 +65,13 @@
         <artifactId>minimal-json</artifactId>
         <version>${minimal-json.version}</version>
     </dependency>
+    <!-- TODO: Re-work "PepperBoxConfigElementTest.java" to make this dependency unnecessary. -->
+    <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20190722</version>
+        <scope>test</scope>
+    </dependency>
 </dependencies>
 
     <build>
