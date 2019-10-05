@@ -1,6 +1,7 @@
 package com.gslab.pepper.test;
 
 import com.github.openjson.JSONObject;
+import com.gslab.pepper.config.avro.AvroConfigElement;
 import com.gslab.pepper.config.plaintext.PlainTextConfigElementBeanInfo;
 import com.gslab.pepper.config.serialized.SerializedConfigElementBeanInfo;
 import com.gslab.pepper.input.serialized.ClassPropertyEditor;
@@ -8,6 +9,7 @@ import com.gslab.pepper.model.FieldExpressionMapping;
 import com.gslab.pepper.config.plaintext.PlainTextConfigElement;
 import com.gslab.pepper.config.serialized.SerializedConfigElement;
 import com.gslab.pepper.input.SchemaProcessor;
+import com.gslab.pepper.util.AvroUtils;
 import com.gslab.pepper.util.PropsKeys;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
@@ -17,6 +19,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -30,6 +33,31 @@ public class PepperBoxConfigElementTest {
     public static void setUp(){
         JMeterContext jmcx = JMeterContextService.getContext();
         jmcx.setVariables(new JMeterVariables());
+    }
+
+    @Test
+    public void avroConfigTest() throws IOException {
+        final AvroConfigElement avroConfigElement = new AvroConfigElement();
+        avroConfigElement.setJsonTemplate(TestInputUtils.testSchema);
+        avroConfigElement.setAvroSchema(TestInputUtils.testSchemaAvroSchema);
+        avroConfigElement.setPlaceHolder(PropsKeys.MSG_PLACEHOLDER);
+        avroConfigElement.iterationStart(null);
+        final Object object = JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+
+        Assert.assertEquals(byte[].class, object.getClass());
+        Assert.assertTrue((int) AvroUtils.deserialize((byte[]) object).get(0).get("messageId") > 0);
+    }
+
+    @Test(expected = ClassFormatError.class)
+    public void avroExceptionTest(){
+        final AvroConfigElement avroConfigElement = new AvroConfigElement();
+        avroConfigElement.setJsonTemplate(TestInputUtils.defectSchema);
+        avroConfigElement.setAvroSchema(TestInputUtils.testSchemaAvroSchema);
+        avroConfigElement.setPlaceHolder(PropsKeys.MSG_PLACEHOLDER);
+        JMeterContextService.getContext().getVariables().remove(PropsKeys.MSG_PLACEHOLDER);
+        avroConfigElement.iterationStart(null);
+        Object object = JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+        Assert.assertNull("Failed to run config element", object);
     }
 
     @Test

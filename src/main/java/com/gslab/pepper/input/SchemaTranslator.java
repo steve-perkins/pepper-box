@@ -3,7 +3,9 @@ package com.gslab.pepper.input;
 import com.gslab.pepper.PepperBoxLoadGenerator;
 import com.gslab.pepper.exception.PepperBoxException;
 import com.gslab.pepper.input.compile.InMemoryJavaCompiler;
+import com.gslab.pepper.util.AvroUtils;
 import com.gslab.pepper.util.PropsKeys;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -55,7 +57,6 @@ public class SchemaTranslator {
         }
     }
 
-
     /**
      * Creates serialized Object Iterator
      *
@@ -91,6 +92,46 @@ public class SchemaTranslator {
     }
 
     /**
+     * Creates an Avro message iterator.
+     *
+     * @param avroSchema An Avro schema definition (in JSON format)
+     * @param execStatement Java source code, dynamically rendering a test message that SHOULD conform to this Avro schema
+     * @return An Iterator whose "next()" method always returns a fresh re-rendering of the test message, in Avro binary format (i.e. byte[]).
+     * @throws PepperBoxException
+     */
+    public Iterator getAvroMsgIterator(final String avroSchema, String execStatement) throws PepperBoxException {
+        final Iterator plainTextIterator = getPlainTextMsgIterator(execStatement);
+
+        return new Iterator() {
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Object next() {
+                final String processedJson = plainTextIterator.next().toString();
+                try {
+                    return AvroUtils.serialize(processedJson, avroSchema);
+                } catch (IOException e) {
+                    // Runtime exceptions are a bad thing.  But the underlying framework does not contemplate the
+                    // possibility of something going wrong during message generation (i.e. "BaseLoadGenerator.nextMessage()"
+                    // declares no checked exception type).  If a checked exception occurs, then it is expected to
+                    // happen in the constructor method for the "BaseLoadGenerator" implementation class.
+                    //
+                    // The alternative to this is adding a checked exception declaration (e.g. the "PepperBoxException"
+                    // wrapper) to "BaseLoadGenerator.nextMessage()", and forcing downstream callers to explicitly
+                    // handle it.
+                    //
+                    // Honestly, a failure in test message generation almost certainly means a serious bug in the test
+                    // plan.  It might be best to blow up the test run, and NOT attempt graceful recovery.
+                    throw new RuntimeException("Unable to convert message to Avro binary format.", e);
+                }
+            }
+        };
+    }
+
+    /**
      * Read template with given template name
      *
      * @param template
@@ -104,8 +145,6 @@ public class SchemaTranslator {
             builder.append(scanner.nextLine());
         }
         return builder.toString();
-
     }
-
 
 }

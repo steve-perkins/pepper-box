@@ -16,6 +16,19 @@ public class TestInputUtils {
             "\t\"messageTime\":{{TIMESTAMP()}}\n" +
             "}";
 
+    public static String testSchemaAvroSchema = "{\n" +
+            "\t\"namespace\": \"example.avro\",\n" +
+            "\t\"type\": \"record\",\n" +
+            "\t\"name\": \"Message\",\n" +
+            "\t\"fields\": [\n" +
+            "\t\t{ \"name\": \"messageId\", \"type\": \"int\" },\n" +
+            "\t\t{ \"name\": \"messageBody\", \"type\": \"string\" },\n" +
+            "\t\t{ \"name\": \"messageCategory\", \"type\": \"string\" },\n" +
+            "\t\t{ \"name\": \"messageStatus\", \"type\": \"string\" },\n" +
+            "\t\t{ \"name\": \"messageTime\", \"type\": \"long\" }\n" +
+            "\t]\n" +
+            "}";
+
     public static String testKeySchema = "{\n" +
             "\t\"messageId\":{{SEQUENCE(\"messageId\", 1, 1)}}" +
             "}";

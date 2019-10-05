@@ -14,58 +14,77 @@
         <joda-time.version>2.10.4</joda-time.version>
         <guava.version>28.1-jre</guava.version>
         <minimal-json.version>0.9.5</minimal-json.version>
+        <avro.version>1.8.2</avro.version>
+        <kafka-avro-serializer.version>3.2.1</kafka-avro-serializer.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jmeter.lib.scope>provided</jmeter.lib.scope>
     </properties>
 
-<dependencies>
-    <dependency>
-        <groupId>org.apache.jmeter</groupId>
-        <artifactId>ApacheJMeter_core</artifactId>
-        <version>${jmeter.version}</version>
-        <scope>${jmeter.lib.scope}</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.jmeter</groupId>
-        <artifactId>ApacheJMeter_java</artifactId>
-        <version>${jmeter.version}</version>
-        <scope>${jmeter.lib.scope}</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.kafka</groupId>
-        <artifactId>kafka_2.11</artifactId>
-        <version>${kafka.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.kafka</groupId>
-        <artifactId>kafka_2.11</artifactId>
-        <version>${kafka.version}</version>
-        <classifier>test</classifier>
-        <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.kafka</groupId>
-        <artifactId>kafka-clients</artifactId>
-        <version>${kafka.version}</version>
-        <classifier>test</classifier>
-        <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <version>${joda-time.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>com.eclipsesource.minimal-json</groupId>
-        <artifactId>minimal-json</artifactId>
-        <version>${minimal-json.version}</version>
-    </dependency>
-</dependencies>
+    <repositories>
+        <repository>
+            <id>confluent</id>
+            <url>http://packages.confluent.io/maven/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.jmeter</groupId>
+            <artifactId>ApacheJMeter_core</artifactId>
+            <version>${jmeter.version}</version>
+            <scope>${jmeter.lib.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jmeter</groupId>
+            <artifactId>ApacheJMeter_java</artifactId>
+            <version>${jmeter.version}</version>
+            <scope>${jmeter.lib.scope}</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+            <version>${kafka.version}</version>
+            <classifier>test</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+            <classifier>test</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>${joda-time.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.eclipsesource.minimal-json</groupId>
+            <artifactId>minimal-json</artifactId>
+            <version>${minimal-json.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <version>${kafka-avro-serializer.version}</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <resources>

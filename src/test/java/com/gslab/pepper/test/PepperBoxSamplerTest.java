@@ -272,6 +272,16 @@ public class PepperBoxSamplerTest {
 
     }
 
+    @Test
+    public void avroTextSamplerTest() {
+        // TODO: Implement this test
+    }
+
+    @Test
+    public void avroTextKeyedMessageSamplerTest() {
+        // TODO: Implement this test
+    }
+
     @After
     public void teardown(){
         kafkaServer.shutdown();
