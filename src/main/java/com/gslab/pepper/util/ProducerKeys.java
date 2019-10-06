@@ -57,4 +57,6 @@ public class ProducerKeys {
 
     public static final String FLAG_YES = "YES";
 
+    public static final String SCHEMA_REGISTRY_CLIENT = "schema.registry.client";
+
 }

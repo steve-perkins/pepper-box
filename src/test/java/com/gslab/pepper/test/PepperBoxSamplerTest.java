@@ -1,11 +1,18 @@
 package com.gslab.pepper.test;
 
+import com.gslab.pepper.config.avro.AvroConfigElement;
 import com.gslab.pepper.config.plaintext.PlainTextConfigElement;
 import com.gslab.pepper.config.serialized.SerializedConfigElement;
 import com.gslab.pepper.model.FieldExpressionMapping;
 import com.gslab.pepper.sampler.PepperBoxKafkaSampler;
+import com.gslab.pepper.util.AvroUtils;
 import com.gslab.pepper.util.ProducerKeys;
 import com.gslab.pepper.util.PropsKeys;
+import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import kafka.utils.MockTime;
@@ -14,6 +21,7 @@ import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 import kafka.zk.EmbeddedZookeeper;
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.avro.Schema;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.threads.JMeterContext;
@@ -24,6 +32,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.utils.Time;
 import org.junit.After;
 import org.junit.Assert;
@@ -76,6 +86,125 @@ public class PepperBoxSamplerTest {
         JMeterContext jmcx = JMeterContextService.getContext();
         jmcx.setVariables(new JMeterVariables());
 
+    }
+
+    @Test
+    public void avroTextSamplerTest() throws IOException, RestClientException {
+        final PepperBoxKafkaSampler sampler = new PepperBoxKafkaSampler();
+        final Arguments arguments = sampler.getDefaultParameters();
+        arguments.removeArgument(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+        arguments.removeArgument(ProducerKeys.KAFKA_TOPIC_CONFIG);
+        arguments.removeArgument(ProducerKeys.ZOOKEEPER_SERVERS);
+        arguments.removeArgument(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
+        arguments.addArgument(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKERHOST + ":" + BROKERPORT);
+        arguments.addArgument(ProducerKeys.ZOOKEEPER_SERVERS, ZKHOST + ":" + zkServer.port());
+        arguments.addArgument(ProducerKeys.KAFKA_TOPIC_CONFIG, TOPIC);
+        arguments.addArgument(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+
+        jmcx = new JavaSamplerContext(arguments);
+
+        final SchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient();
+        final Schema schema = new Schema.Parser().parse(TestInputUtils.testSchemaAvroSchema);
+        schemaRegistryClient.register("Message", schema);
+        jmcx.getJMeterVariables().putObject(ProducerKeys.SCHEMA_REGISTRY_CLIENT, schemaRegistryClient);
+
+        sampler.setupTest(jmcx);
+
+        final AvroConfigElement avroConfigElement = new AvroConfigElement();
+        avroConfigElement.setJsonTemplate(TestInputUtils.testSchema);
+        avroConfigElement.setAvroSchema(TestInputUtils.testSchemaAvroSchema);
+        avroConfigElement.setPlaceHolder(PropsKeys.MSG_PLACEHOLDER);
+        avroConfigElement.iterationStart(null);
+
+        final byte[] msgSent = (byte[]) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+        sampler.runTest(jmcx);
+
+        final Properties consumerProps = new Properties();
+        consumerProps.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKERHOST + ":" + BROKERPORT);
+        consumerProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "group0");
+        consumerProps.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, "consumer0");
+        consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class.getName());
+        consumerProps.setProperty("schema.registry.url", "mock");
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        final Deserializer valueDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
+        final KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
+
+        consumer.subscribe(Arrays.asList(TOPIC));
+        final ConsumerRecords<String, Object> records = consumer.poll(30000);
+        Assert.assertEquals(1, records.count());
+        final String sent = AvroUtils.deserialize(msgSent).get(0).toString();
+        for (final ConsumerRecord<String, Object> record : records){
+            final String received = AvroUtils.deserialize((byte[]) record.value()).get(0).toString();
+            Assert.assertEquals("Failed to validate produced message", sent, received);
+        }
+
+        sampler.teardownTest(jmcx);
+    }
+
+    @Test
+    public void avroTextKeyedMessageSamplerTest() throws IOException, RestClientException {
+        final PepperBoxKafkaSampler sampler = new PepperBoxKafkaSampler();
+        final Arguments arguments = sampler.getDefaultParameters();
+        arguments.removeArgument(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG);
+        arguments.removeArgument(ProducerKeys.KAFKA_TOPIC_CONFIG);
+        arguments.removeArgument(ProducerKeys.ZOOKEEPER_SERVERS);
+        arguments.removeArgument(PropsKeys.KEYED_MESSAGE_KEY);
+        arguments.removeArgument(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
+        arguments.addArgument(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKERHOST + ":" + BROKERPORT);
+        arguments.addArgument(ProducerKeys.ZOOKEEPER_SERVERS, ZKHOST + ":" + zkServer.port());
+        arguments.addArgument(ProducerKeys.KAFKA_TOPIC_CONFIG, TOPIC);
+        arguments.addArgument(PropsKeys.KEYED_MESSAGE_KEY,"YES");
+        arguments.addArgument(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
+
+        jmcx = new JavaSamplerContext(arguments);
+
+        final SchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient();
+        final Schema schema = new Schema.Parser().parse(TestInputUtils.testSchemaAvroSchema);
+        schemaRegistryClient.register("Message", schema);
+        jmcx.getJMeterVariables().putObject(ProducerKeys.SCHEMA_REGISTRY_CLIENT, schemaRegistryClient);
+
+        sampler.setupTest(jmcx);
+
+        final PlainTextConfigElement keyConfigElement = new PlainTextConfigElement();
+        keyConfigElement.setJsonSchema(TestInputUtils.testKeySchema);
+        keyConfigElement.setPlaceHolder(PropsKeys.MSG_KEY_PLACEHOLDER);
+        keyConfigElement.iterationStart(null);
+
+        final AvroConfigElement avroConfigElement = new AvroConfigElement();
+        avroConfigElement.setJsonTemplate(TestInputUtils.testSchema);
+        avroConfigElement.setAvroSchema(TestInputUtils.testSchemaAvroSchema);
+        avroConfigElement.setPlaceHolder(PropsKeys.MSG_PLACEHOLDER);
+        avroConfigElement.iterationStart(null);
+
+        final Object keySent = JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_KEY_PLACEHOLDER);
+        final byte[] msgSent = (byte[]) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+        sampler.runTest(jmcx);
+
+        final Properties consumerProps = new Properties();
+        consumerProps.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BROKERHOST + ":" + BROKERPORT);
+        consumerProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "group0");
+        consumerProps.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, "consumer0");
+        consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class.getName());
+        consumerProps.setProperty("schema.registry.url", "mock");
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        final Deserializer valueDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
+        final KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
+
+        consumer.subscribe(Arrays.asList(TOPIC));
+        final ConsumerRecords<String, Object> records = consumer.poll(30000);
+        Assert.assertEquals(1, records.count());
+        final String valueSent = AvroUtils.deserialize(msgSent).get(0).toString();
+        for (final ConsumerRecord<String, Object> record : records){
+            final String valueReceived = AvroUtils.deserialize((byte[]) record.value()).get(0).toString();
+            Assert.assertEquals("Failed to validate key of produced message", keySent.toString(), record.key());
+            Assert.assertEquals("Failed to validate produced message", valueSent, valueReceived);
+        }
+
+        sampler.teardownTest(jmcx);
     }
 
     @Test
@@ -270,16 +399,6 @@ public class PepperBoxSamplerTest {
 
         sampler.teardownTest(jmcx);
 
-    }
-
-    @Test
-    public void avroTextSamplerTest() {
-        // TODO: Implement this test
-    }
-
-    @Test
-    public void avroTextKeyedMessageSamplerTest() {
-        // TODO: Implement this test
     }
 
     @After

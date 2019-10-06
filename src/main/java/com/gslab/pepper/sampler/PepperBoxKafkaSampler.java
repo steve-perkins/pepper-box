@@ -5,6 +5,8 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.gslab.pepper.util.ProducerKeys;
 import com.gslab.pepper.util.PropsKeys;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
@@ -17,6 +19,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.protocol.SecurityProtocol;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.log.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -147,7 +150,20 @@ public class PepperBoxKafkaSampler extends AbstractJavaSamplerClient {
         }
         msg_val_placeHolder = context.getParameter(PropsKeys.MESSAGE_VAL_PLACEHOLDER_KEY);
         topic = context.getParameter(ProducerKeys.KAFKA_TOPIC_CONFIG);
-        producer = new KafkaProducer<String, Object>(props);
+
+        // This is probably only useful for unit testing.  Where the schema registry client object that has been stored
+        // in the JMeter variables is an instance of "MockSchemaRegistryClient".
+        //
+        // When using a live Kafka Schema Registry instance, it's easier to just supply its URL in the properties
+        // passed to the "KafkaProducer" constructor (with the "AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG"
+        // key), and let that producer construct the schema registry client itself.
+        Serializer valueSerializer = null;
+        final Object schemaRegObj = context.getJMeterVariables().getObject(ProducerKeys.SCHEMA_REGISTRY_CLIENT);
+        if (schemaRegObj != null && schemaRegObj instanceof SchemaRegistryClient) {
+            valueSerializer = new KafkaAvroSerializer((SchemaRegistryClient) schemaRegObj);
+        }
+
+        producer = new KafkaProducer<String, Object>(props, null, valueSerializer);
 
     }
 
