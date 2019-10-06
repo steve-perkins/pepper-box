@@ -5,12 +5,13 @@ import com.gslab.pepper.loadgen.impl.AvroLoadGenerator;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.engine.event.LoopIterationListener;
+import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
 
-public class AvroConfigElement extends ConfigTestElement implements LoopIterationListener {
+public class AvroConfigElement extends ConfigTestElement implements TestBean, LoopIterationListener {
 
     private static final Logger log = LoggingManager.getLoggerForClass();
 
