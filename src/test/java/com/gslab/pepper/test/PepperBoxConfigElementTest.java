@@ -9,8 +9,8 @@ import com.gslab.pepper.model.FieldExpressionMapping;
 import com.gslab.pepper.config.plaintext.PlainTextConfigElement;
 import com.gslab.pepper.config.serialized.SerializedConfigElement;
 import com.gslab.pepper.input.SchemaProcessor;
-import com.gslab.pepper.util.AvroUtils;
 import com.gslab.pepper.util.PropsKeys;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
@@ -44,8 +44,8 @@ public class PepperBoxConfigElementTest {
         avroConfigElement.iterationStart(null);
         final Object object = JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
 
-        Assert.assertEquals(byte[].class, object.getClass());
-        Assert.assertTrue((int) AvroUtils.deserialize((byte[]) object).get(0).get("messageId") > 0);
+        Assert.assertTrue(object instanceof GenericRecord);
+        Assert.assertTrue((int) ((GenericRecord) object).get("messageId") > 0);
     }
 
     @Test(expected = ClassFormatError.class)

@@ -3,12 +3,13 @@ package com.gslab.pepper.loadgen.impl;
 import com.gslab.pepper.exception.PepperBoxException;
 import com.gslab.pepper.input.SchemaProcessor;
 import com.gslab.pepper.loadgen.BaseLoadGenerator;
+import org.apache.avro.generic.GenericRecord;
 
 import java.util.Iterator;
 
 public class AvroLoadGenerator implements BaseLoadGenerator {
 
-    private transient Iterator<byte[]> messageIterator = null;
+    private transient Iterator<GenericRecord> messageIterator = null;
 
     private transient SchemaProcessor schemaProcessor = new SchemaProcessor();
 

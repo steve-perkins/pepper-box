@@ -6,6 +6,7 @@ import com.eclipsesource.json.JsonObject;
 import com.gslab.pepper.util.ProducerKeys;
 import com.gslab.pepper.util.PropsKeys;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
@@ -64,6 +65,7 @@ public class PepperBoxKafkaSampler extends AbstractJavaSamplerClient {
         defaultParameters.addArgument(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, ProducerKeys.BOOTSTRAP_SERVERS_CONFIG_DEFAULT);
         defaultParameters.addArgument(ProducerKeys.ZOOKEEPER_SERVERS, ProducerKeys.ZOOKEEPER_SERVERS_DEFAULT);
         defaultParameters.addArgument(ProducerKeys.KAFKA_TOPIC_CONFIG, ProducerKeys.KAFKA_TOPIC_CONFIG_DEFAULT);
+        defaultParameters.addArgument(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, ProducerKeys.SCHEMA_REGISTRY_URL_DEFAULT);
         defaultParameters.addArgument(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ProducerKeys.KEY_SERIALIZER_CLASS_CONFIG_DEFAULT);
         defaultParameters.addArgument(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ProducerKeys.VALUE_SERIALIZER_CLASS_CONFIG_DEFAULT);
         defaultParameters.addArgument(ProducerConfig.COMPRESSION_TYPE_CONFIG, ProducerKeys.COMPRESSION_TYPE_CONFIG_DEFAULT);
@@ -150,6 +152,11 @@ public class PepperBoxKafkaSampler extends AbstractJavaSamplerClient {
         }
         msg_val_placeHolder = context.getParameter(PropsKeys.MESSAGE_VAL_PLACEHOLDER_KEY);
         topic = context.getParameter(ProducerKeys.KAFKA_TOPIC_CONFIG);
+
+        final String schemaRegistryUrl = context.getParameter(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG);
+        if (schemaRegistryUrl != null && !schemaRegistryUrl.equals(ProducerKeys.SCHEMA_REGISTRY_URL_DEFAULT)) {
+            props.put(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+        }
 
         // This is probably only useful for unit testing.  Where the schema registry client object that has been stored
         // in the JMeter variables is an instance of "MockSchemaRegistryClient".

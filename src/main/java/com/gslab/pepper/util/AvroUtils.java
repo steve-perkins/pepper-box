@@ -2,10 +2,8 @@ package com.gslab.pepper.util;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
-import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.file.SeekableByteArrayInput;
 import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.Decoder;
@@ -13,7 +11,6 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -33,28 +30,23 @@ public class AvroUtils {
      * @return A binary Avro payload, for the given schema and data
      * @throws IOException
      */
-    public static byte[] serialize(final String json, final String avroSchema) throws IOException {
+    public static List<GenericRecord> serialize(final String json, final String avroSchema) throws IOException {
         try (final InputStream input = new ByteArrayInputStream(json.getBytes())) {
             final Schema schema = new Schema.Parser().parse(avroSchema);
-            final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
-            final ByteArrayOutputStream output = new ByteArrayOutputStream();
-            final DataInputStream din = new DataInputStream(input);
-            final DataFileWriter<GenericRecord> writer = new DataFileWriter<>(new GenericDatumWriter<>());
-            writer.create(schema, output);
 
+            final DataInputStream din = new DataInputStream(input);
             final Decoder decoder = DecoderFactory.get().jsonDecoder(schema, din);
-            GenericRecord datum;
+            final DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
+            final List<GenericRecord> records = new ArrayList<>();
             while (true) {
                 try {
-                    datum = reader.read(null, decoder);
+                    final GenericRecord record = reader.read(null, decoder);
+                    records.add(record);
                 } catch (final EOFException eofe) {
                     break;
                 }
-                writer.append(datum);
             }
-            writer.flush();
-
-            return output.toByteArray();
+            return records;
         }
     }
 

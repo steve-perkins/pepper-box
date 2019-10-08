@@ -17,6 +17,8 @@ public class ProducerKeys {
 
     public static final String ZOOKEEPER_SERVERS_DEFAULT = "<Zookeeper List>";
 
+    public static final String SCHEMA_REGISTRY_URL_DEFAULT = "UNUSED";
+
     public static final String KAFKA_TOPIC_CONFIG_DEFAULT = "<Topic>";
 
     public static final String KEY_SERIALIZER_CLASS_CONFIG_DEFAULT = StringSerializer.class.getName();

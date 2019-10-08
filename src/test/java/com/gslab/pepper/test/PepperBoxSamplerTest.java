@@ -22,6 +22,7 @@ import kafka.utils.ZkUtils;
 import kafka.zk.EmbeddedZookeeper;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.threads.JMeterContext;
@@ -106,6 +107,7 @@ public class PepperBoxSamplerTest {
         final SchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient();
         final Schema schema = new Schema.Parser().parse(TestInputUtils.testSchemaAvroSchema);
         schemaRegistryClient.register("Message", schema);
+        schemaRegistryClient.register("test-value", schema);
         jmcx.getJMeterVariables().putObject(ProducerKeys.SCHEMA_REGISTRY_CLIENT, schemaRegistryClient);
 
         sampler.setupTest(jmcx);
@@ -116,7 +118,7 @@ public class PepperBoxSamplerTest {
         avroConfigElement.setPlaceHolder(PropsKeys.MSG_PLACEHOLDER);
         avroConfigElement.iterationStart(null);
 
-        final byte[] msgSent = (byte[]) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+        final GenericRecord msgSent = (GenericRecord) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
         sampler.runTest(jmcx);
 
         final Properties consumerProps = new Properties();
@@ -129,15 +131,13 @@ public class PepperBoxSamplerTest {
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         final Deserializer valueDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
-        final KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
+        final KafkaConsumer<String, GenericRecord> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
 
         consumer.subscribe(Arrays.asList(TOPIC));
-        final ConsumerRecords<String, Object> records = consumer.poll(30000);
+        final ConsumerRecords<String, GenericRecord> records = consumer.poll(30000);
         Assert.assertEquals(1, records.count());
-        final String sent = AvroUtils.deserialize(msgSent).get(0).toString();
-        for (final ConsumerRecord<String, Object> record : records){
-            final String received = AvroUtils.deserialize((byte[]) record.value()).get(0).toString();
-            Assert.assertEquals("Failed to validate produced message", sent, received);
+        for (final ConsumerRecord<String, GenericRecord> record : records){
+            Assert.assertEquals("Failed to validate produced message", msgSent, record.value());
         }
 
         sampler.teardownTest(jmcx);
@@ -163,6 +163,7 @@ public class PepperBoxSamplerTest {
         final SchemaRegistryClient schemaRegistryClient = new MockSchemaRegistryClient();
         final Schema schema = new Schema.Parser().parse(TestInputUtils.testSchemaAvroSchema);
         schemaRegistryClient.register("Message", schema);
+        schemaRegistryClient.register("test-value", schema);
         jmcx.getJMeterVariables().putObject(ProducerKeys.SCHEMA_REGISTRY_CLIENT, schemaRegistryClient);
 
         sampler.setupTest(jmcx);
@@ -179,7 +180,7 @@ public class PepperBoxSamplerTest {
         avroConfigElement.iterationStart(null);
 
         final Object keySent = JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_KEY_PLACEHOLDER);
-        final byte[] msgSent = (byte[]) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
+        final GenericRecord msgSent = (GenericRecord) JMeterContextService.getContext().getVariables().getObject(PropsKeys.MSG_PLACEHOLDER);
         sampler.runTest(jmcx);
 
         final Properties consumerProps = new Properties();
@@ -192,16 +193,14 @@ public class PepperBoxSamplerTest {
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         final Deserializer valueDeserializer = new KafkaAvroDeserializer(schemaRegistryClient);
-        final KafkaConsumer<String, Object> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
+        final KafkaConsumer<String, GenericRecord> consumer = new KafkaConsumer<>(consumerProps, null, valueDeserializer);
 
         consumer.subscribe(Arrays.asList(TOPIC));
-        final ConsumerRecords<String, Object> records = consumer.poll(30000);
+        final ConsumerRecords<String, GenericRecord> records = consumer.poll(30000);
         Assert.assertEquals(1, records.count());
-        final String valueSent = AvroUtils.deserialize(msgSent).get(0).toString();
-        for (final ConsumerRecord<String, Object> record : records){
-            final String valueReceived = AvroUtils.deserialize((byte[]) record.value()).get(0).toString();
+        for (final ConsumerRecord<String, GenericRecord> record : records){
             Assert.assertEquals("Failed to validate key of produced message", keySent.toString(), record.key());
-            Assert.assertEquals("Failed to validate produced message", valueSent, valueReceived);
+            Assert.assertEquals("Failed to validate produced message", msgSent, record.value());
         }
 
         sampler.teardownTest(jmcx);

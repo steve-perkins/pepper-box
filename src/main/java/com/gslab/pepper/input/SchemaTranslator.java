@@ -1,6 +1,5 @@
 package com.gslab.pepper.input;
 
-import com.gslab.pepper.PepperBoxLoadGenerator;
 import com.gslab.pepper.exception.PepperBoxException;
 import com.gslab.pepper.input.compile.InMemoryJavaCompiler;
 import com.gslab.pepper.util.AvroUtils;
@@ -22,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class SchemaTranslator {
 
-    private static Logger LOGGER = Logger.getLogger(PepperBoxLoadGenerator.class.getName());
+    private static Logger LOGGER = Logger.getLogger(SchemaTranslator.class.getName());
 
     /**
      * Creates plain text iterator
@@ -112,7 +111,7 @@ public class SchemaTranslator {
             public Object next() {
                 final String processedJson = plainTextIterator.next().toString();
                 try {
-                    return AvroUtils.serialize(processedJson, avroSchema);
+                    return AvroUtils.serialize(processedJson, avroSchema).get(0);
                 } catch (IOException e) {
                     // Runtime exceptions are a bad thing.  But the underlying framework does not contemplate the
                     // possibility of something going wrong during message generation (i.e. "BaseLoadGenerator.nextMessage()"
